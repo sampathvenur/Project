@@ -1,2 +1,1 @@
-# Project
-Major Project
+Happy birthday gandhiji, let's party 🥳💃
