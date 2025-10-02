@@ -1,0 +1,25 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kidney Stone Detection</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Kidney Stone Detection</h1>
+        <p>Upload a CT scan image to detect the presence of a kidney stone.</p>
+        <form id="upload-form">
+            <input type="file" id="file-input" accept="image/*">
+            <button type="submit">Predict</button>
+        </form>
+        <div id="result-container">
+            <h2>Prediction Result:</h2>
+            <p id="result"></p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
