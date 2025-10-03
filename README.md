@@ -50,3 +50,8 @@
    ```
    check runs/ dir for result sheets
    ```
+
+5. Resnet classifier model
+   ```
+   stone_type_classifier_resnet.pkl
+   ```
