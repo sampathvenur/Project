@@ -28,7 +28,7 @@
 
 5. Open your browser and go to ```http://localhost:8080``` to access the web interface
 
-## Models till 02-10-2025
+## Models till 04-10-2025
 
 1. CNN model
    ```
