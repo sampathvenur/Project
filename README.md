@@ -1,5 +1,7 @@
 > **For a detailed explanation of the system architecture, models, and codebase, please see our [Full Project Documentation (DOCS.md)](DOCS.md).**
 
+![Kidney](https://media.tenor.com/gw6jgBdh0JwAAAAC/rambo-worst-ever.gif)
+
 ![System Data Flow](screenshot/system%20data%20flow.png)
 
 # Project
