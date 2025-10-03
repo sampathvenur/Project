@@ -1,3 +1,7 @@
+> **For a detailed explanation of the system architecture, models, and codebase, please see our [Full Project Documentation (DOCS.md)](DOCS.md).**
+
+![System Data Flow](screenshot/system%20data%20flow.png)
+
 # Project
 
 ## To get started
