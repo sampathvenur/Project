@@ -3,7 +3,7 @@ import numpy as np
 from fastapi import FastAPI, File, UploadFile
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.vgg16 import VGG16, preprocess_input
+from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
 import cv2
 import io
 import os
@@ -17,13 +17,13 @@ app = FastAPI()
 # Load the trained CNN model for kidney stone detection
 model = load_model('kidney_stone_detection_model.h5')
 
-# Load VGG16 model for feature extraction, excluding the top classification layer
-feature_extractor = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
+# Load ResNet50 model for feature extraction, excluding the top classification layer
+feature_extractor = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 
 # --- Stone Type Classification Model ---
 stone_classifier = None
 label_encoder = None
-CLASSIFIER_PATH = 'stone_type_classifier.pkl'
+CLASSIFIER_PATH = 'stone_type_classifier_resnet.pkl'
 
 def load_and_train_stone_classifier():
     global stone_classifier, label_encoder
