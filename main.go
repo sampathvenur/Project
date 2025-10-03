@@ -14,11 +14,8 @@ func main() {
 	http.Handle("/", fs)
 
 	// Handle API requests by proxying them to the Python backend
-	http.HandleFunc("/predict", func(w http.ResponseWriter, r *http.Request) {
-		proxyToPythonAPI(w, r, "http://localhost:8000/predict")
-	})
-	http.HandleFunc("/predict_stone_type", func(w http.ResponseWriter, r *http.Request) {
-		proxyToPythonAPI(w, r, "http://localhost:8000/predict_stone_type")
+	http.HandleFunc("/predict_image", func(w http.ResponseWriter, r *http.Request) {
+		proxyToPythonAPI(w, r, "http://localhost:8000/predict_image")
 	})
 
 	// Start the server
@@ -33,7 +30,12 @@ func proxyToPythonAPI(w http.ResponseWriter, r *http.Request, apiURL string) {
 	}
 
 	// Parse the multipart form
-	r.ParseMultipartForm(10 << 20) // 10 MB
+	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10 MB
+		http.Error(w, "Error parsing multipart form", http.StatusBadRequest)
+		return
+	}
+
+	// Get the file from the form
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "Error retrieving the file", http.StatusBadRequest)
@@ -41,21 +43,30 @@ func proxyToPythonAPI(w http.ResponseWriter, r *http.Request, apiURL string) {
 	}
 	defer file.Close()
 
+	// Get the expected_type from the form
+	expectedType := r.FormValue("expected_type")
+
 	// Create a new multipart writer
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
+
+	// Create and copy the file part
 	part, err := writer.CreateFormFile("file", handler.Filename)
 	if err != nil {
 		http.Error(w, "Error creating form file", http.StatusInternalServerError)
 		return
 	}
-
-	// Copy the file content
-	_, err = io.Copy(part, file)
-	if err != nil {
+	if _, err = io.Copy(part, file); err != nil {
 		http.Error(w, "Error copying file content", http.StatusInternalServerError)
 		return
 	}
+
+	// Create the expected_type form field
+	if err = writer.WriteField("expected_type", expectedType); err != nil {
+		http.Error(w, "Error writing form field", http.StatusInternalServerError)
+		return
+	}
+
 	writer.Close()
 
 	// Create a new request to the Python API
