@@ -61,3 +61,6 @@
    ```
    stone_type_classifier_resnet.pkl
    ```
+
+   # _**Yes, you now have more knowledge than yesterday, Keep Going.**_
+![Happy](https://media2.giphy.com/media/BPJmthQ3YRwD6QqcVD/giphy.gif)
