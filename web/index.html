@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kidney Stone Detection</title>
+    <title>Kidney Stone Analysis</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,6 +20,20 @@
             <p id="result"></p>
         </div>
     </div>
+
+    <div class="container">
+        <h1>Kidney Stone Type Classification</h1>
+        <p>Upload a kidney stone image to classify its type.</p>
+        <form id="upload-form-stone-type">
+            <input type="file" id="file-input-stone-type" accept="image/*">
+            <button type="submit">Classify Stone Type</button>
+        </form>
+        <div id="result-container-stone-type">
+            <h2>Classification Result:</h2>
+            <p id="result-stone-type"></p>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
