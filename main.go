@@ -13,14 +13,25 @@ func main() {
 	fs := http.FileServer(http.Dir("./web"))
 	http.Handle("/", fs)
 
-	// Handle the prediction request
-	http.HandleFunc("/predict", handlePredict)
+	// Handle API requests by proxying them to the Python backend
+	http.HandleFunc("/predict", func(w http.ResponseWriter, r *http.Request) {
+		proxyToPythonAPI(w, r, "http://localhost:8000/predict")
+	})
+	http.HandleFunc("/predict_stone_type", func(w http.ResponseWriter, r *http.Request) {
+		proxyToPythonAPI(w, r, "http://localhost:8000/predict_stone_type")
+	})
 
 	// Start the server
 	http.ListenAndServe(":8080", nil)
 }
 
-func handlePredict(w http.ResponseWriter, r *http.Request) {
+func proxyToPythonAPI(w http.ResponseWriter, r *http.Request, apiURL string) {
+	// Handle only POST requests
+	if r.Method != http.MethodPost {
+		http.Error(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	// Parse the multipart form
 	r.ParseMultipartForm(10 << 20) // 10 MB
 	file, handler, err := r.FormFile("file")
@@ -48,7 +59,7 @@ func handlePredict(w http.ResponseWriter, r *http.Request) {
 	writer.Close()
 
 	// Create a new request to the Python API
-	req, err := http.NewRequest("POST", "http://localhost:8000/predict", body)
+	req, err := http.NewRequest("POST", apiURL, body)
 	if err != nil {
 		http.Error(w, "Error creating request to Python API", http.StatusInternalServerError)
 		return
