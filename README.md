@@ -4,7 +4,7 @@
 
 1. Clone the repo
    ```
-   https://github.com/sampathvenur/Project.git
+   git clone https://github.com/sampathvenur/Project.git
    cd Project
    ```
 [python 3.12.10](https://www.python.org/downloads/release/python-31210/) 👈 Download and install python <br>
@@ -39,4 +39,9 @@
 2. SVM model
    ```
    Accuracy :  0.7966666666666666
+   ```
+
+3. Classifier model
+   ```
+   stone_type_classifier.pkl
    ```
