@@ -45,3 +45,8 @@
    ```
    stone_type_classifier.pkl
    ```
+
+4. Yolo image classifier model
+   ```
+   check runs/ dir for result sheets
+   ```
