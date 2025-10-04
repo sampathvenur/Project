@@ -1,8 +1,6 @@
 > **For a detailed explanation of the system architecture, models, and codebase, please see our [Full Project Documentation (DOCS.md)](DOCS.md).**
 
-![Kidney](https://media.tenor.com/gw6jgBdh0JwAAAAC/rambo-worst-ever.gif)
-
-![System Data Flow](screenshot/system%20data%20flow.png)
+![System Data Flow](screenshot/image1.jpg)
 
 # Project
 
@@ -61,6 +59,4 @@
    ```
    stone_type_classifier_resnet.pkl
    ```
-
-   # _**Yes, you now have more knowledge than yesterday, Keep Going.**_
-![Happy](https://media2.giphy.com/media/BPJmthQ3YRwD6QqcVD/giphy.gif)
+   

@@ -2,9 +2,9 @@
 
 ## 1. System Architecture and Flow
 
-This project is a full-stack application designed to analyze medical images for kidney stones. It consists of a web frontend, a Go backend acting as a reverse proxy, and a Python backend for AI/ML model inference.
+This project is an application designed to analyze medical images for kidney stones. It consists of a web frontend, a Go backend acting as a reverse proxy, and a Python backend for AI/ML model inference.
 
-![System Data Flow](screenshot/system%20data%20flow.png)
+![System Data Flow](screenshot/image1.jpg)
 
 ### System Flow:
 
@@ -38,7 +38,7 @@ This model determines whether a kidney stone is present in a given CT scan image
 *   **Training Process**: Detailed in `Kidney_Stone_Detection.ipynb`.
     *   **Architecture**: A Convolutional Neural Network (CNN) built with Keras/TensorFlow.
 
-        ![CNN Model](screenshot/cnn2.png)
+        ![CNN Model](screenshot/image2.jpg)
 
         *   `Conv2D` (32 filters, 3x3 kernel, ReLU) -> `BatchNormalization` -> `MaxPooling2D`
         *   `Conv2D` (64 filters, 3x3 kernel, ReLU) -> `BatchNormalization` -> `MaxPooling2D`
@@ -70,7 +70,7 @@ This model classifies the specific type of a kidney stone from a microscope imag
 *   **Training Process**: The training logic is uniquely located within the `api.py` file (`load_and_train_stone_classifier` function) and runs on server startup if the `.pkl` file is not found.
     *   **Architecture**: This is a two-stage model:
 
-        ![ResNet+SVM Model](screenshot/resnet%20and%20svm.png)
+        ![ResNet+SVM Model](screenshot/image3.jpg)
 
         1.  **Feature Extractor**: A pre-trained `ResNet50` model (with 'imagenet' weights) is used to convert each stone image into a high-dimensional feature vector. The final classification layer of ResNet50 is removed.
         2.  **Classifier**: A `sklearn.svm.SVC` with a linear kernel is trained on the features extracted by ResNet50.
@@ -80,7 +80,7 @@ This model classifies the specific type of a kidney stone from a microscope imag
 
 This model acts as a preliminary classifier to ensure the user has uploaded the correct type of image to the correct form.
 
-![YOLO Gatekeeper](screenshot/yolo.png)
+![YOLO Gatekeeper](screenshot/image4.jpg)
 
 *   **Model File**: `yolo_gatekeeper.pt`
 *   **Training Data**: Assembled by `train_yolo_classifier.py`.
@@ -105,8 +105,6 @@ This model acts as a preliminary classifier to ensure the user has uploaded the 
 ## 3. Codebase Details
 
 This section describes the roles of the key files in the project.
-
-![Codebase Interaction](screenshot/system%20request%20flow.png)
 
 ### `api.py`
 *   **Framework**: FastAPI.
