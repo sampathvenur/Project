@@ -1,56 +1,181 @@
-
+/* --- Global Reset & Body --- */
 body {
-    font-family: sans-serif;
-    background-color: #f4f4f9;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-}
-
-.container {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    text-align: center;
-}
-
-h1 {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #232732; /* Dark Navy from your image */
     color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
 }
 
+/* --- Header Section --- */
+.header-section {
+    text-align: center;
+    margin-bottom: 40px;
+    color: #fff;
+}
+
+.header-section h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+
+.header-section p {
+    margin-top: 10px;
+    opacity: 0.8;
+    font-size: 1.1rem;
+}
+
+/* --- Main Layout Wrapper --- */
+.main-wrapper {
+    display: flex;
+    flex-wrap: wrap; /* Allows stacking on mobile */
+    justify-content: center;
+    gap: 30px; /* Space between the two cards */
+    width: 100%;
+    max-width: 1200px;
+    
+    /* CRITICAL FIX: aligned to top so they don't jump around */
+    align-items: flex-start; 
+}
+
+/* --- Card Containers --- */
+.container {
+    background: #ffffff;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    text-align: center;
+    flex: 1; /* Both cards take equal width */
+    min-width: 300px; /* Won't get too skinny */
+    max-width: 500px; /* Won't get too wide */
+    transition: transform 0.2s ease;
+}
+
+.container:hover {
+    transform: translateY(-5px); /* Subtle lift effect */
+}
+
+/* --- Typography inside cards --- */
+h2 {
+    color: #1f2937;
+    margin-top: 0;
+    font-size: 1.8rem;
+}
+
+h3 {
+    font-size: 1.1rem;
+    color: #6b7280;
+    margin-top: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+/* --- Forms & Inputs --- */
 form {
     margin: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 input[type="file"] {
-    border: 1px solid #ddd;
-    padding: 0.5rem;
-    border-radius: 4px;
+    background: #f9fafb;
+    border: 2px dashed #d1d5db;
+    padding: 1rem;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.3s;
 }
 
+input[type="file"]:hover {
+    border-color: #3b82f6;
+}
+
+/* --- Buttons --- */
 button {
-    background-color: #007bff;
+    background-color: #3b82f6; /* Bright Blue */
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 4px;
+    padding: 0.9rem 1.5rem;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.1s;
 }
 
 button:hover {
-    background-color: #0056b3;
+    background-color: #2563eb;
+    transform: scale(1.02);
 }
 
-#result-container {
-    margin-top: 1.5rem;
+button:active {
+    transform: scale(0.98);
 }
 
-#result {
-    font-size: 1.2rem;
+.secondary-btn {
+    background-color: #10b981; /* Green for the second button */
+}
+
+.secondary-btn:hover {
+    background-color: #059669;
+}
+
+/* --- Results Area --- */
+#result, #result-stone-type {
+    font-size: 1.3rem;
     font-weight: bold;
-    color: #333;
+    color: #111827;
+    min-height: 1.5rem;
+}
+
+/* Measurement List Styling */
+#measurement-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+    text-align: left;
+    display: inline-block;
+}
+
+#measurement-list li {
+    background: #eff6ff;
+    color: #1e40af;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.95rem;
+    border-left: 4px solid #3b82f6;
+}
+
+/* Image Display Styling */
+.image-box {
+    margin-top: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+    /* Keeps the layout stable */
+}
+
+#processed-image {
+    max-width: 100%;
+    height: auto;
+    display: none; /* Hidden by default */
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }

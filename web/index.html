@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,30 +7,54 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Kidney Stone Detection</h1>
-        <p>Upload a CT scan image to detect the presence of a kidney stone.</p>
-        <form id="upload-form">
-            <input type="file" id="file-input" accept="image/*">
-            <button type="submit">Predict</button>
-        </form>
-        <div id="result-container">
-            <h2>Prediction Result:</h2>
-            <p id="result"></p>
-        </div>
+    
+    <div class="header-section">
+        <h1>Kidney Stone Analysis System</h1>
+        <p>YOLO Based Kidney Stone Detection & Classification</p>
     </div>
 
-    <div class="container">
-        <h1>Kidney Stone Type Classification</h1>
-        <p>Upload a kidney stone image to classify its type.</p>
-        <form id="upload-form-stone-type">
-            <input type="file" id="file-input-stone-type" accept="image/*">
-            <button type="submit">Classify Stone Type</button>
-        </form>
-        <div id="result-container-stone-type">
-            <h2>Classification Result:</h2>
-            <p id="result-stone-type"></p>
+    <div class="main-wrapper">
+        
+        <div class="container">
+            <h2>Kidney Stone Detection</h2>
+            <p class="subtitle">Upload a CT scan (PNG/JPG) to detect stones and calculate dimensions.</p>
+            
+            <form id="upload-form">
+                <div class="file-input-wrapper">
+                    <input type="file" id="file-input" accept="image/*" required>
+                </div>
+                <button type="submit">Analyze Scan</button>
+            </form>
+            
+            <div id="result-container">
+                <h3>Analysis Report:</h3>
+                <p id="result">Waiting for upload...</p>
+                
+                <ul id="measurement-list"></ul>
+                
+                <div class="image-box">
+                    <img id="processed-image" src="" alt="Detection Result">
+                </div>
+            </div>
         </div>
+
+        <div class="container">
+            <h2>Stone Type Classification</h2>
+            <p class="subtitle">Upload a focused stone image to identify its chemical composition.</p>
+            
+            <form id="upload-form-stone-type">
+                <div class="file-input-wrapper">
+                    <input type="file" id="file-input-stone-type" accept="image/*" required>
+                </div>
+                <button type="submit" class="secondary-btn">Classify Type</button>
+            </form>
+            
+            <div id="result-container-stone-type">
+                <h3>Classification Result:</h3>
+                <p id="result-stone-type">Waiting for upload...</p>
+            </div>
+        </div>
+
     </div>
 
     <script src="script.js"></script>

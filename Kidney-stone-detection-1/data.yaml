@@ -1,0 +1,12 @@
+names:
+- Tas_Var
+nc: 1
+roboflow:
+  license: CC BY 4.0
+  project: kidney-stone-detection-wfjba
+  url: https://universe.roboflow.com/east-west-university-9frzq/kidney-stone-detection-wfjba/dataset/1
+  version: 1
+  workspace: east-west-university-9frzq
+test: ../test/images
+train: ../train/images
+val: ../valid/images

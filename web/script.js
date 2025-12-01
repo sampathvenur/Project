@@ -1,8 +1,18 @@
-
 async function handleUpload(file, resultElement, expectedType) {
     if (!file) {
         resultElement.textContent = 'Please select a file.';
         return;
+    }
+
+    // Reset previous detection results if they exist
+    const processedImage = document.getElementById('processed-image');
+    const measurementList = document.getElementById('measurement-list');
+    if (processedImage) {
+        processedImage.style.display = 'none';
+        processedImage.src = '';
+    }
+    if (measurementList) {
+        measurementList.innerHTML = '';
     }
 
     const formData = new FormData();
@@ -26,7 +36,23 @@ async function handleUpload(file, resultElement, expectedType) {
         let resultText = '';
         if (data.prediction_type === 'stone_detection') {
             const confidenceScore = (data.confidence * 100).toFixed(2);
-            resultText = `Prediction: ${data.result} (Confidence: ${confidenceScore}%)`;
+            resultText = `${data.result} (Confidence: ${confidenceScore}%)`;
+
+            // --- NEW: Handle Image and Measurements ---
+            if (data.processed_image) {
+                processedImage.src = `data:image/jpeg;base64,${data.processed_image}`;
+                processedImage.style.display = 'block';
+            }
+            
+            if (data.measurements && data.measurements.length > 0) {
+                data.measurements.forEach(measurement => {
+                    const li = document.createElement('li');
+                    li.textContent = measurement;
+                    measurementList.appendChild(li);
+                });
+            }
+            // ------------------------------------------
+
         } else if (data.prediction_type === 'stone_type_classification') {
             resultText = `Prediction: ${data.result}`;
         } else {

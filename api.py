@@ -1,33 +1,43 @@
-
 import numpy as np
-from fastapi import FastAPI, File, UploadFile
-from tensorflow.keras.models import load_model
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet50 import ResNet50, preprocess_input
+from ultralytics import YOLO
 import cv2
 import io
 import os
-from sklearn.svm import SVC
-from sklearn.preprocessing import LabelEncoder
-
 import joblib
+import base64
 
 app = FastAPI()
 
-# Load the trained CNN model for kidney stone detection
-model = load_model('kidney_stone_detection_model.h5')
+# --- CONSTANTS ---
+# Assumption: 1 pixel = 0.5 mm
+PIXEL_SPACING_MM = 0.5
 
-# Load ResNet50 model for feature extraction, excluding the top classification layer
+# --- 1. DETECTION MODEL (YOLOv8) ---
+try:
+    detection_model = YOLO('kidney_stone_yolo_detection.pt')
+except Exception as e:
+    print(f"Warning: Could not load 'kidney_stone_yolo_detection.pt'. Error: {e}")
+    detection_model = None
+
+# --- 2. CLASSIFICATION MODEL (ResNet + SVM) ---
 feature_extractor = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
-
-# --- Stone Type Classification Model ---
 stone_classifier = None
 label_encoder = None
 CLASSIFIER_PATH = 'stone_type_classifier_resnet.pkl'
 
+# --- 3. GATEKEEPER MODEL ---
+try:
+    yolo_gatekeeper = YOLO('yolo_gatekeeper.pt')
+except Exception as e:
+    print(f"Warning: Could not load 'yolo_gatekeeper.pt'. Error: {e}")
+    yolo_gatekeeper = None
+
+# --- Helper Functions for Classification ---
 def load_and_train_stone_classifier():
     global stone_classifier, label_encoder
-
     if os.path.exists(CLASSIFIER_PATH):
         print(f"Loading existing classifier from {CLASSIFIER_PATH}...")
         try:
@@ -38,71 +48,11 @@ def load_and_train_stone_classifier():
             return
         except Exception as e:
             print(f"Error loading classifier: {e}. Retraining...")
-
-    print("No existing classifier found or failed to load. Training a new one...")
-    data_dir = 'data'
-    image_paths = []
-    labels = []
-
-    for stone_type in os.listdir(data_dir):
-        stone_dir = os.path.join(data_dir, stone_type)
-        if os.path.isdir(stone_dir):
-            for img_name in os.listdir(stone_dir):
-                img_path = os.path.join(stone_dir, img_name)
-                image_paths.append(img_path)
-                labels.append(stone_type)
-
-    if not image_paths:
-        print("No images found for stone type classification. Skipping training.")
-        return
-
-    # Batch process images for feature extraction
-    batch_size = 32
-    image_batch = []
-    all_features = []
-
-    for i, img_path in enumerate(image_paths):
-        img = image.load_img(img_path, target_size=(224, 224))
-        img_array = image.img_to_array(img)
-        image_batch.append(img_array)
-
-        if len(image_batch) == batch_size or i == len(image_paths) - 1:
-            batch_np = np.array(image_batch)
-            preprocessed_batch = preprocess_input(batch_np)
-            features = feature_extractor.predict(preprocessed_batch, batch_size=batch_size)
-            for f in features:
-                all_features.append(f.flatten())
-            image_batch = []
-
-    # Create, train, and save the classifier and label encoder
-    label_encoder = LabelEncoder()
-    encoded_labels = label_encoder.fit_transform(labels)
-    
-    stone_classifier = SVC(kernel='linear', probability=True)
-    stone_classifier.fit(all_features, encoded_labels)
-    print("Stone type classifier trained successfully.")
-
-    try:
-        print(f"Saving new classifier to {CLASSIFIER_PATH}...")
-        saved_data = {'classifier': stone_classifier, 'encoder': label_encoder}
-        joblib.dump(saved_data, CLASSIFIER_PATH)
-        print("Classifier saved successfully.")
-    except Exception as e:
-        print(f"Error saving classifier: {e}")
+    print("Classifier not found or failed to load.")
 
 @app.on_event("startup")
 def startup_event():
     load_and_train_stone_classifier()
-
-def preprocess_image_for_detection(img_stream):
-    img_array = np.frombuffer(img_stream, np.uint8)
-    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = cv2.resize(img, (150, 150))
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array /= 255.0
-    return img_array
 
 def preprocess_image_for_classification(img_stream):
     img_array = np.frombuffer(img_stream, np.uint8)
@@ -114,22 +64,77 @@ def preprocess_image_for_classification(img_stream):
     img_array = preprocess_input(img_array)
     return img_array
 
-from ultralytics import YOLO
-
-# Load the YOLOv8 model for image classification/routing
-yolo_model = YOLO('yolo_gatekeeper.pt')  # Assuming the model is in the root directory
+# --- Core Logic Functions ---
 
 def run_stone_detection(image_contents: bytes):
-    """Runs the kidney stone detection model."""
-    processed_image = preprocess_image_for_detection(image_contents)
-    prediction = model.predict(processed_image)
-    predicted_index = np.argmax(prediction[0])
-    result = "Stone" if predicted_index == 1 else "Normal"
-    raw_prediction = float(prediction[0][predicted_index])
-    return {"prediction_type": "stone_detection", "result": result, "confidence": raw_prediction}
+    """
+    Runs YOLOv8 detection.
+    - Draws bounding boxes.
+    - Calculates size in mm.
+    - Returns the processed image as base64.
+    """
+    if detection_model is None:
+        return {"error": "Detection model not loaded."}
+
+    # 1. Decode image for OpenCV
+    nparr = np.frombuffer(image_contents, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Create a copy to draw on
+    img_to_draw = img.copy()
+
+    # 2. Run Inference
+    # conf=0.1 means 10% confidence (High Sensitivity)
+    results = detection_model.predict(img, conf=0.1) 
+    result_object = results[0]
+    
+    stone_measurements = []
+    result_text = "No Stone Detected"
+    confidence = 0.0
+
+    # 3. Analyze Results & Draw
+    if len(result_object.boxes) > 0:
+        result_text = "Stone Detected"
+        confidence = float(result_object.boxes.conf[0])
+
+        for i, box in enumerate(result_object.boxes):
+            # Get pixel dimensions [x, y, w, h]
+            pixel_width = box.xywh[0][2].item()
+            pixel_height = box.xywh[0][3].item()
+
+            # Calculate physical size in mm
+            mm_width = pixel_width * PIXEL_SPACING_MM
+            mm_height = pixel_height * PIXEL_SPACING_MM
+            
+            stone_measurements.append(f"Stone {i+1}: {mm_width:.1f}mm x {mm_height:.1f}mm")
+
+            # Get coordinates for drawing [x1, y1, x2, y2]
+            box_coords = box.xyxy[0].cpu().numpy().astype(int)
+
+            # Draw green bounding box
+            cv2.rectangle(img_to_draw, (box_coords[0], box_coords[1]), (box_coords[2], box_coords[3]), (0, 255, 0), 2)
+
+            # Draw text label
+            label = f"{mm_width:.1f}x{mm_height:.1f}mm"
+            cv2.putText(img_to_draw, label, (box_coords[0], box_coords[1] - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    else:
+        confidence = 0.99 
+
+    # 4. Encode the processed image to send back
+    _, buffer = cv2.imencode('.jpg', img_to_draw)
+    img_base64 = base64.b64encode(buffer).decode('utf-8')
+        
+    return {
+        "prediction_type": "stone_detection", 
+        "result": result_text, 
+        "confidence": confidence,
+        "processed_image": img_base64, 
+        "measurements": stone_measurements
+    }
 
 def run_stone_type_classification(image_contents: bytes):
-    """Runs the stone type classification model."""
+    """Runs the stone type classification model (ResNet + SVM)."""
     if stone_classifier is None or label_encoder is None:
         raise HTTPException(status_code=503, detail="Stone classifier is not available.")
     
@@ -139,14 +144,8 @@ def run_stone_type_classification(image_contents: bytes):
     stone_type = label_encoder.inverse_transform(prediction)
     return {"prediction_type": "stone_type_classification", "result": stone_type[0]}
 
-from fastapi import File, UploadFile, Form, HTTPException
-
 @app.post("/predict_image")
 async def predict_image(file: UploadFile = File(...), expected_type: str = Form(...)):
-    """
-    Accepts an image and an expected type, uses YOLO to determine the actual type,
-    and routes to the appropriate model if the expected and actual types match.
-    """
     contents = await file.read()
     
     temp_image_path = f"temp_{file.filename}"
@@ -154,42 +153,44 @@ async def predict_image(file: UploadFile = File(...), expected_type: str = Form(
         temp_file.write(contents)
         
     try:
-        results = yolo_model.predict(temp_image_path, verbose=False)
-        
-        # A classification model's results object is different.
-        if not results or not hasattr(results[0], 'probs') or results[0].probs is None:
-            return {"error": "Could not identify the image. Please upload a clear CT or stone image."}
+        # --- Gatekeeper Logic ---
+        if yolo_gatekeeper is None:
+             print("Gatekeeper not loaded, bypassing verification.")
+             if expected_type == 'ct_scan':
+                 return run_stone_detection(contents)
+             else:
+                 return run_stone_type_classification(contents)
 
-        # Get top prediction from the probabilities
+        results = yolo_gatekeeper.predict(temp_image_path, verbose=False)
+        
+        if not results or not hasattr(results[0], 'probs') or results[0].probs is None:
+            return {"error": "Could not identify the image."}
+
         probs = results[0].probs
         confidence = probs.top1conf.item()
-        detected_class_id = probs.top1
-        detected_class_name = results[0].names[detected_class_id]
+        detected_class_name = results[0].names[probs.top1]
         
-        confidence_threshold = 0.5
-        if confidence < confidence_threshold:
-            return {"error": f"Image not clear enough (confidence: {confidence:.2f}). Please upload a different one."}
+        if confidence < 0.5:
+            return {"error": f"Image not clear enough (confidence: {confidence:.2f})."}
 
-        # If the model predicts 'other', reject it immediately.
         if detected_class_name == 'other':
-            return {"error": "Image is not a CT scan or stone image. Please upload a relevant medical image."}
+            return {"error": "Image is not a CT scan or stone image."}
 
-        # Enforce that the detected type matches the form it came from
         if detected_class_name != expected_type:
-            return {"error": f"Incorrect image type. You uploaded a {detected_class_name.replace('_', ' ')}, but this form only accepts {expected_type.replace('_', ' ')}s."}
+            return {"error": f"Incorrect image type. Detected: {detected_class_name}, Expected: {expected_type}."}
 
-        # Route to the correct model
+        # --- Routing Logic ---
         if detected_class_name == 'ct_scan':
             return run_stone_detection(contents)
         elif detected_class_name == 'stone_image':
             return run_stone_type_classification(contents)
             
     except Exception as e:
-        return {"error": f"An error occurred during image processing: {str(e)}"}
+        return {"error": f"An error occurred: {str(e)}"}
     finally:
         if os.path.exists(temp_image_path):
             os.remove(temp_image_path)
 
 @app.get("/")
 def read_root():
-    return {"message": "Kidney Stone Detection API"}
+    return {"message": "Kidney Stone Detection API (YOLOv8 + ResNet)"}
