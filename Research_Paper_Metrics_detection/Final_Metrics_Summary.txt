@@ -1,0 +1,27 @@
+KIDNEY STONE DETECTION - MODEL METRICS REPORT
+=================================================
+Generated on: 2025-12-01 05:17:41
+Source Run: /content/runs/detect/train
+Best Epoch: 20.0
+
+1. PRIMARY METRICS (Cite these in your paper)
+-------------------------------------------------
+mAP@50 (Mean Average Precision @ 0.5 IoU): 0.7728
+   -> In simple terms, this is your model's "Accuracy" for detection.
+   -> A score > 0.5 is usually acceptable, > 0.8 is excellent.
+
+mAP@50-95 (Strict Accuracy): 0.3404
+   -> This measures how perfectly the box fits the stone.
+
+2. DETAILED METRICS
+-------------------------------------------------
+Precision: 0.8276
+   -> Out of all stones detected, how many were actually stones?
+
+Recall: 0.7200
+   -> Out of all real stones in the images, how many did we find?
+
+3. TRAINING LOSS (At final epoch)
+-------------------------------------------------
+Box Loss: 1.8542
+Class Loss: 0.9293

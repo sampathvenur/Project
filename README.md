@@ -30,33 +30,4 @@
    ```
 
 
-5. Open your browser and go to ```http://localhost:8080``` to access the web interface
-
-## Models till 04-10-2025
-
-1. CNN model
-   ```
-   60/60 [==============================] - 5s 89ms/step - loss: 0.3823 - accuracy: 0.8500
-    [0.38234245777130127, 0.8500000238418579]
-   ```
-
-2. SVM model
-   ```
-   Accuracy :  0.7966666666666666
-   ```
-
-3. Classifier model
-   ```
-   stone_type_classifier.pkl
-   ```
-
-4. Yolo image classifier model
-   ```
-   check runs/ dir for result sheets
-   ```
-
-5. Resnet classifier model
-   ```
-   stone_type_classifier_resnet.pkl
-   ```
-   
+5. Open your browser and go to ```http://localhost:8080``` to access the web interface 

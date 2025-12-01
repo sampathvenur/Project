@@ -1,7 +1,6 @@
-/* --- Global Reset & Body --- */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #232732; /* Dark Navy from your image */
+    background-color: #232732;
     color: #333;
     margin: 0;
     padding: 20px;
@@ -33,13 +32,11 @@ body {
 /* --- Main Layout Wrapper --- */
 .main-wrapper {
     display: flex;
-    flex-wrap: wrap; /* Allows stacking on mobile */
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 30px; /* Space between the two cards */
+    gap: 30px;
     width: 100%;
     max-width: 1200px;
-    
-    /* CRITICAL FIX: aligned to top so they don't jump around */
     align-items: flex-start; 
 }
 
@@ -50,14 +47,14 @@ body {
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     text-align: center;
-    flex: 1; /* Both cards take equal width */
-    min-width: 300px; /* Won't get too skinny */
-    max-width: 500px; /* Won't get too wide */
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
     transition: transform 0.2s ease;
 }
 
 .container:hover {
-    transform: translateY(-5px); /* Subtle lift effect */
+    transform: translateY(-5px);
 }
 
 /* --- Typography inside cards --- */
@@ -107,7 +104,7 @@ input[type="file"]:hover {
 
 /* --- Buttons --- */
 button {
-    background-color: #3b82f6; /* Bright Blue */
+    background-color: #3b82f6;
     color: white;
     border: none;
     padding: 0.9rem 1.5rem;
@@ -128,7 +125,7 @@ button:active {
 }
 
 .secondary-btn {
-    background-color: #10b981; /* Green for the second button */
+    background-color: #10b981;
 }
 
 .secondary-btn:hover {
@@ -168,13 +165,12 @@ button:active {
     margin-top: 15px;
     border-radius: 8px;
     overflow: hidden;
-    /* Keeps the layout stable */
 }
 
 #processed-image {
     max-width: 100%;
     height: auto;
-    display: none; /* Hidden by default */
+    display: none;
     border: 2px solid #e5e7eb;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);

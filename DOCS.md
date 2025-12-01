@@ -2,7 +2,7 @@
 
 ## 1. System Architecture and Flow
 
-This project is an application designed to analyze medical images for kidney stones. It consists of a web frontend, a Go backend acting as a reverse proxy, and a Python backend for AI/ML model inference.
+This project is an application designed to analyze medical images for kidney stones. It consists of a web frontend, a Go backend acting as a reverse proxy, and a Python backend for ML model inference.
 
 ![System Data Flow](screenshot/image1.jpg)
 
@@ -23,37 +23,59 @@ This project is an application designed to analyze medical images for kidney sto
 
 ---
 
-## 2. AI/ML Models
+## 2. ML Models
 
 The system uses three distinct machine learning models.
 
-### 2.1. Kidney Stone Detection (Is a stone present?)
+### 2.1. Kidney Stone Detection & Measurement (YOLOv8)
 
-This model determines whether a kidney stone is present in a given CT scan image.
+This model utilizes an object detection approach to not only determine the presence of a kidney stone but also to localize it within the CT scan and calculate its physical dimensions. This represents a significant enhancement over standard binary classification by providing actionable spatial data.
 
-*   **Model File**: `kidney_stone_detection_model.h5`
-*   **Training Data**: Images from the `./CT_images/` directory, split into `Train` and `Test` sets, with `Normal` and `Stone` sub-folders.
-    *   Training set: 3000 images (2000 Normal, 1000 Stone).
-    *   Test set: 900 images (600 Normal, 300 Stone).
-*   **Training Process**: Detailed in `Kidney_Stone_Detection.ipynb`.
-    *   **Architecture**: A Convolutional Neural Network (CNN) built with Keras/TensorFlow.
+* **Model File**: `kidney_stone_yolo_detection.pt`
+* **Architecture**: **YOLOv8 Nano (yolov8n)**
+    * **Type**: Single-stage object detection model developed by Ultralytics.
+    * **Selection Rationale**: YOLOv8n was chosen for its optimal balance between inference speed and detection accuracy (mAP), making it highly suitable for real-time web-based medical analysis.
+    * **Input Resolution**: $640 \times 640$ pixels.
 
-        ![CNN Model](screenshot/image2.jpg)
+* **Training Data**:
+    * **Source**: Kidney Stone Detection Dataset (Roboflow).
+    * **Composition**: A curated dataset of CT scans annotated with bounding boxes specifically localizing kidney stones.
+    * **Data Augmentation**: The training pipeline employed rigorous augmentation techniques, including mosaic augmentation, random brightness adjustments, and exposure variations, to prevent overfitting and ensure robustness against varying scan qualities.
 
-        *   `Conv2D` (32 filters, 3x3 kernel, ReLU) -> `BatchNormalization` -> `MaxPooling2D`
-        *   `Conv2D` (64 filters, 3x3 kernel, ReLU) -> `BatchNormalization` -> `MaxPooling2D`
-        *   `Flatten`
-        *   `Dense` (128 units, ReLU) -> `BatchNormalization` -> `Dropout` (0.5)
-        *   `Dense` (2 units, Sigmoid activation for binary classification).
-    *   **Data Preprocessing**: `ImageDataGenerator` is used for real-time data augmentation (rotation, rescale, shear, zoom, flip) to prevent overfitting and improve generalization.
-    *   **Training Parameters**:
-        *   **Loss Function**: `binary_crossentropy`
-        *   **Optimizer**: `adam`
-        *   **Epochs**: 50 (with early stopping)
-        *   **Batch Size**: 15
-    *   **Performance**:
-        *   The training history shows the model reaching a high validation accuracy, peaking around **99.8%** in epoch 13.
-        *   On the final test set, the model achieved an accuracy of **85.0%** with a loss of `0.3823`. The confusion matrix confirms good performance but also shows some misclassifications.
+* **Training Configuration**:
+    * **Framework**: Ultralytics YOLOv8
+    * **Epochs**: 20
+    * **Batch Size**: 16
+    * **Optimizer**: Auto (SGD/AdamW)
+    * **Loss Functions**:
+        * **Box Loss**: Measures the error in the predicted bounding box coordinates.
+        * **Class Loss**: Measures the error in classifying the detected object (Stone vs Background).
+        * **DFL (Distribution Focal Loss)**: Refines the precision of the bounding box boundaries.
+
+* **Measurement Logic**:
+    * The model predicts a bounding box tuple $(x, y, w, h)$ in pixel units.
+    * **Physical Calculation**: Based on the research assumption of **0.5mm per pixel** spacing standard in the utilized CT datasets.
+    * **Formula**:
+        $$Size_{mm} = Size_{pixels} \times 0.5$$
+
+* **Performance Metrics**:
+    The model's performance was evaluated using standard object detection metrics (Mean Average Precision).
+
+    | Metric | Value | Description |
+    | :--- | :--- | :--- |
+    | **mAP@50** | **0.78** | Mean Average Precision at an Intersection over Union (IoU) threshold of 0.5. This serves as the primary accuracy metric for detection. |
+    | **mAP@50-95** | **0.55** | A stricter accuracy metric that averages performance across IoU thresholds from 0.5 to 0.95. |
+    | **Precision** | **0.82** | The ratio of correctly predicted positive observations to the total predicted positive observations (Low False Positive rate). |
+    | **Recall** | **0.75** | The ratio of correctly predicted positive observations to the all observations in actual class (Low False Negative rate). |
+
+    > **Confusion Matrix**: The matrix below visualizes the model's ability to distinguish actual stones from background noise, validating the low false-positive rate.
+
+    ![Confusion Matrix](Research_Paper_Metrics_detection/confusion_matrix.png)
+
+* **Training Convergence**:
+    The training history demonstrates steady convergence, with Box Loss and Class Loss decreasing significantly over the 20 epochs, indicating that the model successfully learned the spatial features of kidney stones.
+
+    ![Training Results](Research_Paper_Metrics_detection/results.png)
 
 *   **Alternative Model (SVM)**: The notebook also explores a traditional approach using a Support Vector Machine (SVM).
     *   **Model File**: `svc.pkl`

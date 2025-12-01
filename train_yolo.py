@@ -95,19 +95,15 @@ def train_yolo_model(data_yaml_path):
     model = YOLO('yolov8n.pt')
 
     # Train the model
-    # We use a small number of epochs for a quick demonstration.
-    # For better accuracy, you might increase this to 50 or more.
     results = model.train(
         data=data_yaml_path,
-        epochs=5,  # Reduced for a quick demonstration  
-        imgsz=224, # Image size
+        epochs=5,  
+        imgsz=224,
         batch=16,
         name='yolo_gatekeeper_training'
     )
 
     print("Training complete.")
-    # The best model is saved automatically in the runs/detect/yolo_gatekeeper_training/weights/best.pt
-    # We will copy it to the root directory.
     trained_model_path = results.save_dir / 'weights' / 'best.pt'
     destination_path = 'yolo_gatekeeper.pt'
     shutil.copy(trained_model_path, destination_path)

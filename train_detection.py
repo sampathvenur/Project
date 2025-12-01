@@ -6,14 +6,13 @@ from ultralytics import YOLO
 def main():
     print("--- 1. Setting up Dataset ---")
     # Initialize Roboflow and download dataset
-    # USING THE KEY PROVIDED IN YOUR NOTEBOOK
     rf = Roboflow(api_key="AO0pyUX6kUVWSFsKgDVu")
     project = rf.workspace("east-west-university-9frzq").project("kidney-stone-detection-wfjba")
     dataset = project.version(1).download("yolov8")
 
     print("\n--- 2. Training YOLOv8 Model ---")
     # Load a model
-    model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)
+    model = YOLO('yolov8n.pt')
 
     # Train the model
     # We use the data.yaml path from the downloaded dataset
@@ -29,12 +28,7 @@ def main():
 
     print("\n--- 3. Saving Final Model ---")
     # The training results are usually saved in runs/detect/train/weights/best.pt
-    # We need to find where ultralytics saved the run. 
-    # Usually it returns the path, or we can look in the standard directory.
     
-    # Construct path to the best model weight
-    # Note: If you run this multiple times, it might be train2, train3, etc.
-    # This logic attempts to find the most recent run.
     detect_dir = 'runs/detect'
     if os.path.exists(detect_dir):
         # Get the latest modified folder in runs/detect
