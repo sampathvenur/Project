@@ -146,48 +146,80 @@ def run_stone_type_classification(image_contents: bytes):
 
 @app.post("/predict_image")
 async def predict_image(file: UploadFile = File(...), expected_type: str = Form(...)):
+    # --- Gatekeeper MUST be available ---
+    if yolo_gatekeeper is None:
+        print("FATAL: Gatekeeper model 'yolo_gatekeeper.pt' is not loaded.")
+        raise HTTPException(status_code=503, detail="Image verification model is not available.")
+
     contents = await file.read()
-    
     temp_image_path = f"temp_{file.filename}"
     with open(temp_image_path, "wb") as temp_file:
         temp_file.write(contents)
         
     try:
         # --- Gatekeeper Logic ---
-        if yolo_gatekeeper is None:
-             print("Gatekeeper not loaded, bypassing verification.")
-             if expected_type == 'ct_scan':
-                 return run_stone_detection(contents)
-             else:
-                 return run_stone_type_classification(contents)
-
         results = yolo_gatekeeper.predict(temp_image_path, verbose=False)
         
         if not results or not hasattr(results[0], 'probs') or results[0].probs is None:
-            return {"error": "Could not identify the image."}
+            raise HTTPException(status_code=500, detail="Could not identify the image type.")
 
         probs = results[0].probs
         confidence = probs.top1conf.item()
         detected_class_name = results[0].names[probs.top1]
         
-        if confidence < 0.5:
-            return {"error": f"Image not clear enough (confidence: {confidence:.2f})."}
+        # Stricter confidence check
+        if confidence < 0.90:
+            return {"error": f"Image is not clear enough for identification. Please upload a clear, high-quality medical image. (Best guess: {detected_class_name} with {confidence:.2f} confidence)"}
 
+        # --- SECONDARY VALIDATION ---
+        # Even if confidence is high for a class, check if the 'other' class
+        # also has significant confidence, which indicates an ambiguous image.
+        try:
+            class_names = results[0].names
+            other_class_index = -1
+            # Find the index for the 'other' class dynamically
+            for i, name in class_names.items():
+                if name == 'other':
+                    other_class_index = i
+                    break
+            
+            if other_class_index != -1:
+                all_confidences = probs.data[0].cpu().numpy()
+                other_confidence = all_confidences[other_class_index]
+
+                if other_confidence > 0.05: # 5% threshold
+                    return {"error": f"Ambiguous Image. The model detected features not typical for medical scans (ambiguity score: {other_confidence:.2f}). Please upload a clearer image."}
+
+        except Exception as e:
+            # If this secondary check fails, log it but don't block the request
+            print(f"Warning: Could not perform secondary 'other' class confidence check. Error: {e}")
+
+
+        # Handle 'other' class (primary check)
         if detected_class_name == 'other':
-            return {"error": "Image is not a CT scan or stone image."}
+            return {"error": "Invalid Image. The uploaded image does not appear to be a CT scan or a microscope slide of a kidney stone."}
 
+        # THE CRUCIAL CHECK: Ensure the detected type matches what the user's form expects
         if detected_class_name != expected_type:
-            return {"error": f"Incorrect image type. Detected: {detected_class_name}, Expected: {expected_type}."}
+            # Provide a helpful, user-friendly error message
+            expected_str = expected_type.replace('_', ' ')
+            detected_str = detected_class_name.replace('_', ' ')
+            return {"error": f"Incorrect Image Type. You uploaded a '{detected_str}', but this form expects a '{expected_str}'. Please use the correct form for your image type."}
 
         # --- Routing Logic ---
         if detected_class_name == 'ct_scan':
             return run_stone_detection(contents)
         elif detected_class_name == 'stone_image':
             return run_stone_type_classification(contents)
+        # This case should not be reached if the above logic is sound
+        else:
+            raise HTTPException(status_code=500, detail=f"Internal Error: Unhandled image class '{detected_class_name}'.")
             
     except Exception as e:
-        return {"error": f"An error occurred: {str(e)}"}
+        # Broad exception to catch any unforeseen errors during prediction
+        return {"error": f"An unexpected error occurred during image processing: {str(e)}"}
     finally:
+        # Ensure temporary file is always cleaned up
         if os.path.exists(temp_image_path):
             os.remove(temp_image_path)
 
